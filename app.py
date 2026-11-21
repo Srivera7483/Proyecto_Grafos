@@ -1,21 +1,38 @@
 """
-Punto de entrada principal para la verificación y ejecución del backend del proyecto.
-Simulador interactivo de laberintos y rutas alternativas (INFO1158).
+Punto de entrada principal del simulador interactivo de laberintos.
+
+Modos de ejecución:
+- python app.py: pruebas originales de backend en consola.
+- python -m streamlit run app.py: visualización web con PyVis.
 """
 
 import os
+
+import streamlit as st
+from streamlit.runtime import exists as streamlit_runtime_exists
+
 from src.models.graph_model import DirectedGraph
 from src.algorithms.algorithms import bfs_shortest_path
+from src.ui.visualizer import (
+    grafo_a_datos_visualizacion,
+    generar_html,
+)
+
+
+def ruta_configuracion() -> str:
+    """Devuelve la ruta absoluta del JSON original del proyecto."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, "data", "config_inicial.json")
 
 
 def main() -> None:
+    """Conserva el flujo original de pruebas del backend en consola."""
     print("=" * 65)
     print("  SIMULADOR INTERACTIVO DE LABERINTOS Y RUTAS ALTERNATIVAS")
     print("                 Teoría de Grafos - INFO1158               ")
     print("=" * 65)
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(base_dir, "data", "config_inicial.json")
+    json_path = ruta_configuracion()
 
     print(f"\n[+] Cargando configuración inicial desde: {json_path}")
     grafo = DirectedGraph.from_json(json_path)
@@ -69,5 +86,82 @@ def main() -> None:
     print("=" * 65)
 
 
+def main_streamlit() -> None:
+    """Muestra el grafo real del proyecto usando Streamlit y PyVis."""
+    st.set_page_config(
+        page_title="Simulador de Laberintos | INFO1158",
+        page_icon="🧭",
+        layout="wide",
+    )
+
+    st.title("Simulador de Laberintos y Rutas Alternativas")
+    st.write("Grafo dirigido del centro de almacenamiento (INFO1158).")
+
+    json_path = ruta_configuracion()
+    try:
+        grafo = DirectedGraph.from_json(json_path)
+        datos = grafo_a_datos_visualizacion(grafo)
+    except (FileNotFoundError, ValueError, TypeError, KeyError, AttributeError) as error:
+        st.error(f"No se pudo cargar el grafo inicial: {error}")
+        st.stop()
+
+    valido, errores = grafo.validate_initial_constraints()
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Vértices", len(datos["vertices"]))
+    col2.metric("Arcos", len(datos["arcos"]))
+    col3.metric("Arcos activos", sum(a["activo"] for a in datos["arcos"]))
+    col4.metric("Arcos bloqueados", sum(not a["activo"] for a in datos["arcos"]))
+
+    st.write(f"**Entrada:** `{datos['s']}`  ·  **Salida:** `{datos['t']}`")
+    if valido:
+        st.success("Configuración inicial válida según las restricciones implementadas en DirectedGraph.")
+    else:
+        st.warning("La configuración inicial no cumple todas las restricciones del proyecto.")
+        for error in errores:
+            st.write(f"- {error}")
+
+    st.subheader("Visualización del grafo dirigido")
+    st.iframe(
+        generar_html(datos),
+        height=580,
+        alt="Grafo dirigido: entrada, salida y arcos activos o bloqueados",
+    )
+    st.caption(
+        "Verde: entrada · Rojo: salida · Azul: intersección · "
+        "Gris continuo: arco activo · Rojo discontinuo: arco bloqueado"
+    )
+
+    # La consulta BFS es de solo lectura en esta pantalla.
+    # El bloqueo/restauración original permanece dentro de main(), por consola.
+    with st.expander("Resultado de BFS (backend actual)"):
+        resultado = bfs_shortest_path(grafo)
+        if resultado["exists"]:
+            st.success("Existe un camino de entrada a salida.")
+            st.write(f"**Longitud mínima:** {resultado['length']} arcos")
+            st.write("**Camino:** " + " → ".join(map(str, resultado["path_nodes"])))
+        else:
+            st.info("No existe camino dirigido entre la entrada y la salida.")
+
+    with st.expander("Lista de pasillos y estados"):
+        filas = [
+            {
+                "Origen": arco["origen"],
+                "Destino": arco["destino"],
+                "Estado": "Activo" if arco["activo"] else "Bloqueado",
+            }
+            for arco in datos["arcos"]
+        ]
+        st.table(filas)
+
+    st.info(
+        "Issue #6: visualización inicial. Los controles para modificar el "
+        "grafo se incorporarán en el siguiente issue."
+    )
+
+
 if __name__ == "__main__":
-    main()
+    if streamlit_runtime_exists():
+        main_streamlit()
+    else:
+        main()
