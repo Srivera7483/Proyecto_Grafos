@@ -7,7 +7,6 @@ import os
 import sys
 import unittest
 
-# Asegurar importación de los módulos del proyecto
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.models.graph_model import DirectedGraph
@@ -80,7 +79,6 @@ class TestDirectedGraph(unittest.TestCase):
 
     def test_validate_initial_constraints(self):
         """Verifica las reglas de la configuración inicial con exactamente 12 vértices."""
-        # Cargar configuración inicial (12 vértices, 16 arcos)
         json_path = os.path.join(os.path.dirname(__file__), "..", "data", "config_inicial.json")
         grafo_inicial = DirectedGraph.from_json(json_path)
         valido, errores = grafo_inicial.validate_initial_constraints()
@@ -122,12 +120,10 @@ class TestAlgorithms(unittest.TestCase):
         self.assertEqual(res["max_paths"], 2)
         self.assertEqual(len(res["paths"]), 2)
 
-        # Verificar que los caminos no compartan ningún arco
         arcos_c1 = set(res["paths"][0]["path_edges"])
         arcos_c2 = set(res["paths"][1]["path_edges"])
         self.assertEqual(arcos_c1 & arcos_c2, set(), "Los caminos comparten arcos!")
 
-        # Verificar que ambos caminos vayan de s a t
         for p in res["paths"]:
             self.assertEqual(p["path_nodes"][0], "s")
             self.assertEqual(p["path_nodes"][-1], "t")
@@ -137,11 +133,9 @@ class TestAlgorithms(unittest.TestCase):
         res_disj = max_edge_disjoint_paths(self.g)
         res_cut = min_edge_cut(self.g)
 
-        # La cardinalidad del corte mínimo debe ser igual al flujo máximo
         self.assertEqual(res_cut["cut_size"], res_disj["max_paths"])
         self.assertEqual(res_cut["cut_size"], 2)
 
-        # Al bloquear todos los arcos de C, debe ser imposible llegar a t
         for u, v in res_cut["min_cut_edges"]:
             self.g.block_edge(u, v)
 
@@ -150,7 +144,6 @@ class TestAlgorithms(unittest.TestCase):
 
     def test_algorithms_when_disconnected(self):
         """Verifica el comportamiento cuando no existe ningún camino hacia t."""
-        # Bloquear todas las salidas de s
         for v in list(self.g.active_edges.get("s", set())):
             self.g.block_edge("s", v)
 

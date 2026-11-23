@@ -2,7 +2,7 @@
 Punto de entrada principal del simulador interactivo de laberintos.
 
 Modos de ejecución:
-- python app.py: pruebas originales de backend en consola.
+- python app.py: pruebas de backend en consola.
 - python -m streamlit run app.py: visualización web con PyVis.
 """
 
@@ -10,7 +10,6 @@ import importlib
 import os
 from typing import Any
 
-# Importación dinámica segura para evitar diagnósticos de missing-import en el linter
 st: Any = None
 try:
     st = importlib.import_module("streamlit")
@@ -69,7 +68,6 @@ def main() -> None:
         for err in errores:
             print(f"       * {err}")
 
-    # 1. BFS Shortest Path
     print("\n[+] 1. Búsqueda de Camino Mínimo (BFS):")
     resultado = bfs_shortest_path(grafo)
     if resultado["exists"]:
@@ -80,7 +78,6 @@ def main() -> None:
     else:
         print("    - Estado: No existe camino entre s y t.")
 
-    # 2. Max Edge-Disjoint Paths (Edmonds-Karp)
     print("\n[+] 2. Familia Máxima de Caminos Disjuntos en Arcos (Edmonds-Karp):")
     res_disj = max_edge_disjoint_paths(grafo)
     print(f"    - Total caminos disjuntos: {res_disj['max_paths']}")
@@ -88,7 +85,6 @@ def main() -> None:
         print(f"      * Camino {i} (longitud {p['length']}): {' -> '.join(p['path_nodes'])}")
         print(f"        Arcos: {p['path_edges']}")
 
-    # 3. Min-Cut
     print("\n[+] 3. Corte Mínimo de Pasillos (Min-Cut):")
     res_cut = min_edge_cut(grafo)
     print(f"    - Cardinalidad mínima |C|: {res_cut['cut_size']}")
@@ -97,7 +93,6 @@ def main() -> None:
     print(f"    - Vértices no alcanzables V \\ R: {res_cut['non_reachable_nodes']}")
     print(f"    - Coincidencia (|C| == max_caminos): {res_cut['cut_size'] == res_disj['max_paths']}")
 
-    # 4. Simulación de bloqueo en vivo
     if resultado["exists"] and resultado["path_edges"]:
         arco_a_bloquear = resultado["path_edges"][0]
         print(f"\n[+] 4. Simulando bloqueo de pasillo crítico: {arco_a_bloquear}")
@@ -177,7 +172,6 @@ def main_streamlit() -> None:
         "Gris continuo: arco activo · Rojo discontinuo: arco bloqueado"
     )
 
-    # Expander 1: BFS
     with st.expander("Resultado de Camino Mínimo (BFS)"):
         resultado = bfs_shortest_path(grafo)
         if resultado["exists"]:
@@ -188,14 +182,12 @@ def main_streamlit() -> None:
         else:
             st.info("No existe camino dirigido entre la entrada y la salida.")
 
-    # Expander 2: Caminos Disjuntos
     with st.expander("Familia Máxima de Caminos Disjuntos en Arcos (Edmonds-Karp)"):
         res_disj = max_edge_disjoint_paths(grafo)
         st.write(f"**Máximo número de caminos independientes en arcos:** {res_disj['max_paths']}")
         for i, p in enumerate(res_disj["paths"], 1):
             st.write(f"- **Ruta {i}** (longitud {p['length']}): " + " → ".join(p["path_nodes"]))
 
-    # Expander 3: Corte Mínimo
     with st.expander("Corte Mínimo de Pasillos (Min-Cut)"):
         res_cut = min_edge_cut(grafo)
         st.write(f"**Cantidad mínima de pasillos a bloquear (|C|):** {res_cut['cut_size']}")

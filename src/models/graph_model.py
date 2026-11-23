@@ -85,20 +85,17 @@ class DirectedGraph:
         """
         u_str, v_str = str(u), str(v)
 
-        # 1. Validación de existencia en V
         if u_str not in self.vertices or v_str not in self.vertices:
             raise ValueError(
                 f"Error al agregar arco ({u_str}, {v_str}): los vértices deben existir en V. "
                 f"Vértices faltantes: {[nodo for nodo in (u_str, v_str) if nodo not in self.vertices]}."
             )
 
-        # 2. Validación de lazos
         if u_str == v_str:
             raise ValueError(
                 f"Error al agregar arco ({u_str}, {v_str}): no se permiten lazos (el origen y destino son iguales)."
             )
 
-        # 3. Validación de arcos repetidos
         if v_str in self.active_edges.get(u_str, set()) or (u_str, v_str) in self.blocked_edges:
             raise ValueError(
                 f"Error al agregar arco ({u_str}, {v_str}): el arco ya existe en el grafo "
@@ -106,14 +103,12 @@ class DirectedGraph:
                 f"bloqueado: {(u_str, v_str) in self.blocked_edges})."
             )
 
-        # 4. Validación de arcos recíprocos
         if u_str in self.active_edges.get(v_str, set()) or (v_str, u_str) in self.blocked_edges:
             raise ValueError(
                 f"Error al agregar arco ({u_str}, {v_str}): no se permiten arcos recíprocos; "
                 f"ya existe el arco opuesto ({v_str}, {u_str})."
             )
 
-        # Inserción según estado
         if active:
             self.active_edges[u_str].add(v_str)
         else:
@@ -206,7 +201,6 @@ class DirectedGraph:
             except json.JSONDecodeError as err:
                 raise ValueError(f"El archivo '{filepath}' no contiene un JSON válido: {err}")
 
-        # Validar claves obligatorias
         if "vertices" not in data:
             raise ValueError("El archivo JSON debe contener la clave 'vertices'.")
 
@@ -217,21 +211,17 @@ class DirectedGraph:
 
         raw_edges = data.get("arcos", data.get("edges", []))
 
-        # Reiniciar estado actual
         self.vertices.clear()
         self.active_edges.clear()
         self.blocked_edges.clear()
         self.source = None
         self.sink = None
 
-        # Cargar vértices
         for v in data["vertices"]:
             self.add_vertex(str(v))
 
-        # Establecer terminales s y t
         self.set_terminals(str(source_val), str(sink_val))
 
-        # Cargar y validar arcos
         for edge_info in raw_edges:
             if isinstance(edge_info, dict):
                 u = edge_info.get("origen", edge_info.get("from", edge_info.get("u")))
@@ -295,19 +285,16 @@ class DirectedGraph:
         all_edges = self.get_all_edges()
         n_edges = len(all_edges)
 
-        # 1. Cantidad de vértices: 10 <= |V| <= 12
         if not (10 <= n_vertices <= 12):
             errors.append(
                 f"Cantidad de vértices inválida: |V| = {n_vertices}. Debe cumplir 10 <= |V| <= 12."
             )
 
-        # 2. Cantidad de arcos: 14 <= |E| <= 20
         if not (14 <= n_edges <= 20):
             errors.append(
                 f"Cantidad de arcos inválida: |E| = {n_edges}. Debe cumplir 14 <= |E| <= 20."
             )
 
-        # 3. Terminales válidos
         if self.source is None or self.source not in self.vertices:
             errors.append(f"Vértice de entrada s='{self.source}' no está definido o no pertenece a V.")
         if self.sink is None or self.sink not in self.vertices:
@@ -315,7 +302,6 @@ class DirectedGraph:
         if self.source is not None and self.sink is not None and self.source == self.sink:
             errors.append("Los vértices de entrada y salida no pueden ser iguales (s != t).")
 
-        # 4. Verificación de vértices aislados (grado total)
         in_degree: dict[str, int] = {v: 0 for v in self.vertices}
         out_degree: dict[str, int] = {v: 0 for v in self.vertices}
         for u, v in all_edges:
@@ -328,7 +314,6 @@ class DirectedGraph:
             if in_degree[v] + out_degree[v] == 0:
                 errors.append(f"Vértice aislado detectado: '{v}' no tiene arcos incidentes ni salientes.")
 
-        # 5. Lazos y arcos recíprocos sobre all_edges
         for u, v in all_edges:
             if u == v:
                 errors.append(f"Lazo detectado en el vértice '{u}'.")
@@ -354,13 +339,11 @@ if __name__ == "__main__":
         g.add_vertex(nodo)
     g.set_terminals("s", "t")
 
-    # Agregar arcos
     g.add_edge("s", "A")
     g.add_edge("A", "B")
     g.add_edge("B", "t")
     print(f"Grafo inicial: {g}")
 
-    # Probar bloqueo y desbloqueo
     print("Bloqueando arco ('A', 'B')...")
     g.block_edge("A", "B")
     print(f"Arcos bloqueados: {g.blocked_edges}")
@@ -368,13 +351,12 @@ if __name__ == "__main__":
     g.unblock_edge("A", "B")
     print(f"Arcos bloqueados: {g.blocked_edges}")
 
-    # Probar captura de restricciones
     try:
-        g.add_edge("A", "s")  # Recíproco de s -> A
+        g.add_edge("A", "s")
     except ValueError as e:
         print(f"Capturado error esperado de arco recíproco: {e}")
 
     try:
-        g.add_edge("A", "A")  # Lazo
+        g.add_edge("A", "A")
     except ValueError as e:
         print(f"Capturado error esperado de lazo: {e}")

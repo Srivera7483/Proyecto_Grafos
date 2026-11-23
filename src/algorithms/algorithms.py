@@ -13,7 +13,6 @@ import os
 import sys
 from typing import Any
 
-# Asegurar importación de DirectedGraph tanto como paquete como ejecutado directamente
 try:
     from src.models.graph_model import DirectedGraph
 except ModuleNotFoundError:
@@ -39,9 +38,9 @@ def bfs_shortest_path(graph: DirectedGraph) -> dict[str, Any]:
             - Si existe camino:
                 {
                     "exists": True,
-                    "length": int,                # Cantidad de arcos del camino
-                    "path_nodes": list[str],       # Vértices ordenados [s, ..., t]
-                    "path_edges": list[tuple]      # Arcos dirigidos [(s, v1), ..., (vk, t)]
+                    "length": int,
+                    "path_nodes": list[str],
+                    "path_edges": list[tuple]
                 }
             - Si no existe camino (desconexión o ausencia de ruta dirigida):
                 {
@@ -54,7 +53,6 @@ def bfs_shortest_path(graph: DirectedGraph) -> dict[str, Any]:
     source = graph.source
     sink = graph.sink
 
-    # Validación de existencia de terminales
     if source is None or sink is None:
         return {
             "exists": False,
@@ -71,7 +69,6 @@ def bfs_shortest_path(graph: DirectedGraph) -> dict[str, Any]:
             "path_edges": [],
         }
 
-    # Caso borde: si el origen y destino fueran el mismo vértice
     if source == sink:
         return {
             "exists": True,
@@ -80,10 +77,8 @@ def bfs_shortest_path(graph: DirectedGraph) -> dict[str, Any]:
             "path_edges": [],
         }
 
-    # Estructuras para BFS
     queue: deque[str] = deque([source])
     visited: set[str] = {source}
-    # parent registra el predecesor de cada vértice para reconstruir el camino
     parent: dict[str, str] = {}
 
     found = False
@@ -94,8 +89,6 @@ def bfs_shortest_path(graph: DirectedGraph) -> dict[str, Any]:
             found = True
             break
 
-        # Exploramos los vecinos a través de los arcos activos
-        # Ordenamos los vecinos para garantizar un recorrido determinista
         neighbors = graph.active_edges.get(current, set())
         for neighbor in sorted(neighbors):
             if neighbor not in visited:
@@ -103,7 +96,6 @@ def bfs_shortest_path(graph: DirectedGraph) -> dict[str, Any]:
                 parent[neighbor] = current
                 queue.append(neighbor)
 
-    # Si el sumidero no fue alcanzado
     if not found and sink not in parent:
         return {
             "exists": False,
@@ -112,7 +104,6 @@ def bfs_shortest_path(graph: DirectedGraph) -> dict[str, Any]:
             "path_edges": [],
         }
 
-    # Reconstrucción del camino desde el sumidero hacia la fuente
     path_nodes: list[str] = []
     curr: str | None = sink
     while curr is not None:
@@ -121,7 +112,6 @@ def bfs_shortest_path(graph: DirectedGraph) -> dict[str, Any]:
 
     path_nodes.reverse()
 
-    # Construcción de la lista de arcos dirigidos recorridos
     path_edges: list[tuple[str, str]] = [
         (path_nodes[i], path_nodes[i + 1]) for i in range(len(path_nodes) - 1)
     ]
@@ -158,8 +148,6 @@ def edmonds_karp_max_flow(
 
     vertices = graph.vertices
 
-    # Inicializar red residual y flujo
-    # Para cada arco activo u -> v, capacidad inicial c(u, v) = 1, c(v, u) = 0
     residual: dict[str, dict[str, int]] = {u: {} for u in vertices}
     flow: dict[str, dict[str, int]] = {u: {} for u in vertices}
 
@@ -172,7 +160,6 @@ def edmonds_karp_max_flow(
 
     max_flow = 0
 
-    # Ciclo principal de Edmonds-Karp: buscar caminos de aumento mediante BFS
     while True:
         parent: dict[str, str] = {}
         visited: set[str] = {s}
@@ -185,18 +172,15 @@ def edmonds_karp_max_flow(
                 found_t = True
                 break
 
-            # Orden determinista para la exploración de vecinos
             for neighbor in sorted(residual[curr].keys()):
                 if neighbor not in visited and residual[curr][neighbor] > 0:
                     visited.add(neighbor)
                     parent[neighbor] = curr
                     queue.append(neighbor)
 
-        # Si no hay camino aumentante en la red residual, terminamos
         if not found_t:
             break
 
-        # Reconstruir el camino aumentante
         aug_path: list[tuple[str, str]] = []
         curr_node = t
         while curr_node != s:
@@ -206,15 +190,12 @@ def edmonds_karp_max_flow(
 
         aug_path.reverse()
 
-        # En redes unitarias, el cuello de botella siempre es 1
         bottleneck = min(residual[u][v] for u, v in aug_path)
 
-        # Aumentar flujo a lo largo del camino
         for u, v in aug_path:
             residual[u][v] -= bottleneck
             residual[v][u] += bottleneck
 
-            # Actualizar flujo en arco original o inverso
             if v in graph.active_edges.get(u, set()):
                 flow[u][v] += bottleneck
             else:
@@ -240,10 +221,10 @@ def max_edge_disjoint_paths(graph: DirectedGraph) -> dict[str, Any]:
     Retorna:
         dict[str, Any]:
             {
-                "max_paths": int,                 # Cantidad máxima de caminos disjuntos
-                "paths": list[dict],              # Lista de caminos con nodos, arcos y longitud
-                "paths_nodes": list[list[str]],   # Rutas en formato [[s, ..., t], ...]
-                "paths_edges": list[list[tuple]]  # Rutas en formato [[(s, v1), ...], ...]
+                "max_paths": int,
+                "paths": list[dict],
+                "paths_nodes": list[list[str]],
+                "paths_edges": list[list[tuple]]
             }
             Si no existe camino, retorna 0 caminos y listas vacías [].
     """
@@ -268,7 +249,6 @@ def max_edge_disjoint_paths(graph: DirectedGraph) -> dict[str, Any]:
             "paths_edges": [],
         }
 
-    # Grafo de arcos que llevan flujo positivo (flow == 1)
     flow_edges: dict[str, set[str]] = {u: set() for u in graph.vertices}
     for u in graph.vertices:
         for v, f_val in flow.get(u, {}).items():
@@ -277,9 +257,7 @@ def max_edge_disjoint_paths(graph: DirectedGraph) -> dict[str, Any]:
 
     disjoint_paths: list[dict[str, Any]] = []
 
-    # Descomposición de flujo: extraer caminos dirigidos s -> t consumiendo aristas
     while True:
-        # BFS sobre flow_edges para encontrar un camino s -> t
         queue: deque[str] = deque([s])
         visited: set[str] = {s}
         parent: dict[str, str] = {}
@@ -300,7 +278,6 @@ def max_edge_disjoint_paths(graph: DirectedGraph) -> dict[str, Any]:
         if not found:
             break
 
-        # Reconstruir camino
         path_nodes: list[str] = []
         curr_node: str | None = t
         while curr_node is not None:
@@ -313,7 +290,6 @@ def max_edge_disjoint_paths(graph: DirectedGraph) -> dict[str, Any]:
             (path_nodes[i], path_nodes[i + 1]) for i in range(len(path_nodes) - 1)
         ]
 
-        # Consumir aristas usadas para no repetirlas
         for u_edge, v_edge in path_edges:
             flow_edges[u_edge].remove(v_edge)
 
@@ -347,10 +323,10 @@ def min_edge_cut(graph: DirectedGraph) -> dict[str, Any]:
     Retorna:
         dict[str, Any]:
             {
-                "min_cut_edges": list[tuple[str, str]], # Arcos activos a bloquear en C
-                "cut_size": int,                        # Cardinalidad |C|
-                "reachable_nodes": list[str],           # Vértices alcanzables R desde s
-                "non_reachable_nodes": list[str]        # Vértices V \ R
+                "min_cut_edges": list[tuple[str, str]],
+                "cut_size": int,
+                "reachable_nodes": list[str],
+                "non_reachable_nodes": list[str]
             }
             Si no existe camino de s a t, retorna conjunto vacío [] y cut_size 0.
     """
@@ -367,7 +343,6 @@ def min_edge_cut(graph: DirectedGraph) -> dict[str, Any]:
 
     max_flow, _, residual = edmonds_karp_max_flow(graph)
 
-    # Si inicialmente no existe camino, el conjunto vacío ya impide el desplazamiento
     if max_flow == 0:
         return {
             "min_cut_edges": [],
@@ -376,7 +351,6 @@ def min_edge_cut(graph: DirectedGraph) -> dict[str, Any]:
             "non_reachable_nodes": sorted(list(graph.vertices - {s})),
         }
 
-    # Recorrido (BFS) en la red residual desde s siguiendo aristas con residual > 0
     reachable: set[str] = {s}
     queue: deque[str] = deque([s])
 
@@ -387,14 +361,12 @@ def min_edge_cut(graph: DirectedGraph) -> dict[str, Any]:
                 reachable.add(neighbor)
                 queue.append(neighbor)
 
-    # Identificar arcos activos u -> v tales que u in reachable y v not in reachable
     cut_edges: list[tuple[str, str]] = []
     for u in sorted(reachable):
         for v in sorted(graph.active_edges.get(u, set())):
             if v not in reachable:
                 cut_edges.append((u, v))
 
-    # Validación formal obligatoria: la cardinalidad |C| debe coincidir con el flujo máximo
     if len(cut_edges) != max_flow:
         raise RuntimeError(
             f"Violación del Teorema Flujo-Corte: |C| = {len(cut_edges)} no coincide "
@@ -409,7 +381,6 @@ def min_edge_cut(graph: DirectedGraph) -> dict[str, Any]:
     }
 
 
-# Alias convenientes para facilitar la integración
 edmonds_karp_disjoint_paths = max_edge_disjoint_paths
 find_min_cut = min_edge_cut
 
@@ -431,7 +402,6 @@ if __name__ == "__main__":
     if not valido:
         print(f"   Errores: {errores}")
 
-    # 1. Camino mínimo BFS
     res_bfs = bfs_shortest_path(grafo)
     print(f"\n2. Camino Mínimo (BFS):")
     print(f"   - Existe: {res_bfs['exists']}")
@@ -439,7 +409,6 @@ if __name__ == "__main__":
     print(f"   - Ruta: {' -> '.join(res_bfs['path_nodes'])}")
     print(f"   - Arcos: {res_bfs['path_edges']}")
 
-    # 2. Caminos disjuntos en arcos
     res_disj = max_edge_disjoint_paths(grafo)
     print(f"\n3. Caminos Disjuntos en Arcos (Edmonds-Karp unitario):")
     print(f"   - Máximo número de caminos: {res_disj['max_paths']}")
@@ -447,7 +416,6 @@ if __name__ == "__main__":
         print(f"     Camino {i} (longitud {p['length']}): {' -> '.join(p['path_nodes'])}")
         print(f"       Arcos: {p['path_edges']}")
 
-    # 3. Corte mínimo
     res_cut = min_edge_cut(grafo)
     print(f"\n4. Corte Mínimo de Pasillos (Min-Cut):")
     print(f"   - Cardinalidad mínima |C|: {res_cut['cut_size']}")
@@ -455,14 +423,12 @@ if __name__ == "__main__":
     print(f"   - Vértices alcanzables R: {res_cut['reachable_nodes']}")
     print(f"   - Vértices no alcanzables V \\ R: {res_cut['non_reachable_nodes']}")
 
-    # 4. Verificación de teorema
     print(f"\n5. Verificación de igualdad (Dualidad Min-Cut / Max-Flow):")
     print(f"   - Max caminos disjuntos: {res_disj['max_paths']}")
     print(f"   - Min corte de pasillos: {res_cut['cut_size']}")
     assert res_disj["max_paths"] == res_cut["cut_size"], "¡Error: no coinciden!"
     print("   -> ¡TEOREMA CONFIRMADO: La cardinalidad coincide exactamente!")
 
-    # 5. Verificación de eliminación del corte
     print(f"\n6. Verificando que eliminando C se desconecta s de t...")
     for u, v in res_cut["min_cut_edges"]:
         grafo.block_edge(u, v)
