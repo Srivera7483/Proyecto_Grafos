@@ -1,24 +1,25 @@
 {
   "nombre": "Configuración Inicial (G0)",
-  "descripcion": "Grafo inicial de 10 vértices y 15 pasillos dirigido con al menos dos caminos disjuntos en arcos de s a t",
+  "descripcion": "Grafo inicial de 12 vértices y 16 pasillos dirigidos con al menos dos caminos disjuntos en arcos de s a t",
   "s": "s",
   "t": "t",
-  "vertices": ["s", "2", "3", "4", "5", "6", "7", "8", "9", "t"],
+  "vertices": ["s", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "t"],
   "arcos": [
     {"origen": "s", "destino": "2", "activo": true},
     {"origen": "s", "destino": "5", "activo": true},
-    {"origen": "s", "destino": "8", "activo": true},
     {"origen": "2", "destino": "3", "activo": true},
     {"origen": "2", "destino": "6", "activo": true},
     {"origen": "3", "destino": "4", "activo": true},
     {"origen": "3", "destino": "7", "activo": true},
-    {"origen": "4", "destino": "t", "activo": true},
+    {"origen": "4", "destino": "8", "activo": true},
     {"origen": "5", "destino": "6", "activo": true},
-    {"origen": "5", "destino": "8", "activo": true},
-    {"origen": "6", "destino": "4", "activo": true},
+    {"origen": "5", "destino": "9", "activo": true},
     {"origen": "6", "destino": "7", "activo": true},
+    {"origen": "7", "destino": "8", "activo": true},
     {"origen": "7", "destino": "t", "activo": true},
-    {"origen": "8", "destino": "9", "activo": true},
-    {"origen": "9", "destino": "t", "activo": true}
+    {"origen": "8", "destino": "t", "activo": true},
+    {"origen": "9", "destino": "10", "activo": true},
+    {"origen": "10", "destino": "11", "activo": true},
+    {"origen": "11", "destino": "7", "activo": true}
   ]
 }

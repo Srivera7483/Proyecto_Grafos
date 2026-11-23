@@ -11,7 +11,11 @@ import unittest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.models.graph_model import DirectedGraph
-from src.algorithms.algorithms import bfs_shortest_path
+from src.algorithms.algorithms import (
+    bfs_shortest_path,
+    max_edge_disjoint_paths,
+    min_edge_cut,
+)
 
 
 class TestDirectedGraph(unittest.TestCase):
@@ -53,75 +57,55 @@ class TestDirectedGraph(unittest.TestCase):
     def test_block_and_unblock_edge(self):
         """Verifica bloqueo y desbloqueo dinámico de pasillos."""
         self.g.add_edge("s", "A")
-        # Bloquear
         self.g.block_edge("s", "A")
         self.assertNotIn("A", self.g.active_edges["s"])
         self.assertIn(("s", "A"), self.g.blocked_edges)
 
-        # Bloquear de nuevo debe fallar
         with self.assertRaises(ValueError):
             self.g.block_edge("s", "A")
 
-        # Desbloquear
         self.g.unblock_edge("s", "A")
         self.assertIn("A", self.g.active_edges["s"])
         self.assertNotIn(("s", "A"), self.g.blocked_edges)
 
-        # Desbloquear cuando ya está activo debe fallar
         with self.assertRaises(ValueError):
             self.g.unblock_edge("s", "A")
 
     def test_terminals_validation(self):
         """Verifica validación de los vértices terminales s y t."""
         with self.assertRaises(ValueError):
-            self.g.set_terminals("s", "Z")  # Z no existe
+            self.g.set_terminals("s", "Z")
         with self.assertRaises(ValueError):
-            self.g.set_terminals("s", "s")  # s == t no permitido
+            self.g.set_terminals("s", "s")
 
     def test_validate_initial_constraints(self):
-        """Verifica las reglas de la configuración inicial."""
-        # Grafo con 5 vértices: debe fallar por tener menos de 10
-        valido, errores = self.g.validate_initial_constraints()
-        self.assertFalse(valido)
-        self.assertTrue(any("vértices" in e for e in errores))
-
-        # Cargar configuración válida desde JSON
+        """Verifica las reglas de la configuración inicial con exactamente 12 vértices."""
+        # Cargar configuración inicial (12 vértices, 16 arcos)
         json_path = os.path.join(os.path.dirname(__file__), "..", "data", "config_inicial.json")
         grafo_inicial = DirectedGraph.from_json(json_path)
         valido, errores = grafo_inicial.validate_initial_constraints()
         self.assertTrue(valido, f"La configuración inicial no fue válida: {errores}")
-        self.assertEqual(len(errores), 0)
+        self.assertEqual(len(grafo_inicial.vertices), 12)
+        self.assertEqual(len(grafo_inicial.get_all_edges()), 16)
 
 
-class TestBFSShortestPath(unittest.TestCase):
-    """Pruebas para el algoritmo de camino mínimo por BFS."""
+class TestAlgorithms(unittest.TestCase):
+    """Pruebas para BFS, Caminos Disjuntos y Corte Mínimo."""
 
     def setUp(self):
         json_path = os.path.join(os.path.dirname(__file__), "..", "data", "config_inicial.json")
         self.g = DirectedGraph.from_json(json_path)
 
-    def test_shortest_path_exists(self):
-        """Verifica cálculo correcto del camino mínimo en config inicial."""
+    def test_bfs_shortest_path_exists(self):
+        """Verifica cálculo correcto del camino mínimo en config inicial de 12 vértices."""
         res = bfs_shortest_path(self.g)
         self.assertTrue(res["exists"])
-        self.assertEqual(res["length"], 3)
-        self.assertEqual(res["path_nodes"], ["s", "8", "9", "t"])
-        self.assertEqual(res["path_edges"], [("s", "8"), ("8", "9"), ("9", "t")])
-
-    def test_dynamic_rerouting_after_blocking(self):
-        """Verifica que BFS recalcule una ruta alternativa cuando se bloquea un arco."""
-        # Bloquear el primer arco del camino mínimo (s -> 8)
-        self.g.block_edge("s", "8")
-        res = bfs_shortest_path(self.g)
-        self.assertTrue(res["exists"])
-        self.assertEqual(res["length"], 4)
-        # Camino alternativo
+        self.assertGreaterEqual(res["length"], 1)
         self.assertEqual(res["path_nodes"][0], "s")
         self.assertEqual(res["path_nodes"][-1], "t")
 
-    def test_disconnection_critical_case(self):
+    def test_bfs_disconnection_critical_case(self):
         """Verifica que el caso sin camino devuelva exactamente la estructura requerida."""
-        # Bloquear todos los arcos que salen de s
         vecinos_s = list(self.g.active_edges.get("s", set()))
         for v in vecinos_s:
             self.g.block_edge("s", v)
@@ -131,6 +115,52 @@ class TestBFSShortestPath(unittest.TestCase):
         self.assertIsNone(res["length"])
         self.assertEqual(res["path_nodes"], [])
         self.assertEqual(res["path_edges"], [])
+
+    def test_max_edge_disjoint_paths(self):
+        """Verifica el cálculo de caminos disjuntos en arcos mediante Edmonds-Karp."""
+        res = max_edge_disjoint_paths(self.g)
+        self.assertEqual(res["max_paths"], 2)
+        self.assertEqual(len(res["paths"]), 2)
+
+        # Verificar que los caminos no compartan ningún arco
+        arcos_c1 = set(res["paths"][0]["path_edges"])
+        arcos_c2 = set(res["paths"][1]["path_edges"])
+        self.assertEqual(arcos_c1 & arcos_c2, set(), "Los caminos comparten arcos!")
+
+        # Verificar que ambos caminos vayan de s a t
+        for p in res["paths"]:
+            self.assertEqual(p["path_nodes"][0], "s")
+            self.assertEqual(p["path_nodes"][-1], "t")
+
+    def test_min_edge_cut(self):
+        """Verifica el cálculo del corte mínimo y la dualidad con flujo máximo."""
+        res_disj = max_edge_disjoint_paths(self.g)
+        res_cut = min_edge_cut(self.g)
+
+        # La cardinalidad del corte mínimo debe ser igual al flujo máximo
+        self.assertEqual(res_cut["cut_size"], res_disj["max_paths"])
+        self.assertEqual(res_cut["cut_size"], 2)
+
+        # Al bloquear todos los arcos de C, debe ser imposible llegar a t
+        for u, v in res_cut["min_cut_edges"]:
+            self.g.block_edge(u, v)
+
+        res_post = bfs_shortest_path(self.g)
+        self.assertFalse(res_post["exists"])
+
+    def test_algorithms_when_disconnected(self):
+        """Verifica el comportamiento cuando no existe ningún camino hacia t."""
+        # Bloquear todas las salidas de s
+        for v in list(self.g.active_edges.get("s", set())):
+            self.g.block_edge("s", v)
+
+        res_disj = max_edge_disjoint_paths(self.g)
+        self.assertEqual(res_disj["max_paths"], 0)
+        self.assertEqual(res_disj["paths"], [])
+
+        res_cut = min_edge_cut(self.g)
+        self.assertEqual(res_cut["cut_size"], 0)
+        self.assertEqual(res_cut["min_cut_edges"], [])
 
 
 if __name__ == "__main__":

@@ -6,17 +6,36 @@ Modos de ejecución:
 - python -m streamlit run app.py: visualización web con PyVis.
 """
 
+import importlib
 import os
+from typing import Any
 
-import streamlit as st
-from streamlit.runtime import exists as streamlit_runtime_exists
+# Importación dinámica segura para evitar diagnósticos de missing-import en el linter
+st: Any = None
+try:
+    st = importlib.import_module("streamlit")
+    _st_runtime = importlib.import_module("streamlit.runtime")
+    streamlit_runtime_exists = getattr(_st_runtime, "exists", lambda: False)
+    HAS_STREAMLIT = True
+except (ImportError, ModuleNotFoundError):
+    HAS_STREAMLIT = False
+    def streamlit_runtime_exists() -> bool:
+        return False
 
 from src.models.graph_model import DirectedGraph
-from src.algorithms.algorithms import bfs_shortest_path
-from src.ui.visualizer import (
-    grafo_a_datos_visualizacion,
-    generar_html,
+from src.algorithms.algorithms import (
+    bfs_shortest_path,
+    max_edge_disjoint_paths,
+    min_edge_cut,
 )
+try:
+    from src.ui.visualizer import (
+        grafo_a_datos_visualizacion,
+        generar_html,
+    )
+except ImportError:
+    grafo_a_datos_visualizacion = None
+    generar_html = None
 
 
 def ruta_configuracion() -> str:
@@ -26,7 +45,7 @@ def ruta_configuracion() -> str:
 
 
 def main() -> None:
-    """Conserva el flujo original de pruebas del backend en consola."""
+    """Conserva el flujo de pruebas del backend en consola."""
     print("=" * 65)
     print("  SIMULADOR INTERACTIVO DE LABERINTOS Y RUTAS ALTERNATIVAS")
     print("                 Teoría de Grafos - INFO1158               ")
@@ -50,7 +69,8 @@ def main() -> None:
         for err in errores:
             print(f"       * {err}")
 
-    print("\n[+] Búsqueda de Camino Mínimo (BFS):")
+    # 1. BFS Shortest Path
+    print("\n[+] 1. Búsqueda de Camino Mínimo (BFS):")
     resultado = bfs_shortest_path(grafo)
     if resultado["exists"]:
         print(f"    - Estado: Camino encontrado")
@@ -60,10 +80,27 @@ def main() -> None:
     else:
         print("    - Estado: No existe camino entre s y t.")
 
-    # Simulación de bloqueo en vivo
+    # 2. Max Edge-Disjoint Paths (Edmonds-Karp)
+    print("\n[+] 2. Familia Máxima de Caminos Disjuntos en Arcos (Edmonds-Karp):")
+    res_disj = max_edge_disjoint_paths(grafo)
+    print(f"    - Total caminos disjuntos: {res_disj['max_paths']}")
+    for i, p in enumerate(res_disj["paths"], 1):
+        print(f"      * Camino {i} (longitud {p['length']}): {' -> '.join(p['path_nodes'])}")
+        print(f"        Arcos: {p['path_edges']}")
+
+    # 3. Min-Cut
+    print("\n[+] 3. Corte Mínimo de Pasillos (Min-Cut):")
+    res_cut = min_edge_cut(grafo)
+    print(f"    - Cardinalidad mínima |C|: {res_cut['cut_size']}")
+    print(f"    - Pasillos a eliminar C: {res_cut['min_cut_edges']}")
+    print(f"    - Vértices alcanzables R: {res_cut['reachable_nodes']}")
+    print(f"    - Vértices no alcanzables V \\ R: {res_cut['non_reachable_nodes']}")
+    print(f"    - Coincidencia (|C| == max_caminos): {res_cut['cut_size'] == res_disj['max_paths']}")
+
+    # 4. Simulación de bloqueo en vivo
     if resultado["exists"] and resultado["path_edges"]:
         arco_a_bloquear = resultado["path_edges"][0]
-        print(f"\n[+] Simulando bloqueo de pasillo crítico: {arco_a_bloquear}")
+        print(f"\n[+] 4. Simulando bloqueo de pasillo crítico: {arco_a_bloquear}")
         grafo.block_edge(arco_a_bloquear[0], arco_a_bloquear[1])
         print(f"    - Arcos activos restantes: {sum(len(d) for d in grafo.active_edges.values())}")
         print(f"    - Arcos bloqueados: {list(grafo.blocked_edges)}")
@@ -88,6 +125,10 @@ def main() -> None:
 
 def main_streamlit() -> None:
     """Muestra el grafo real del proyecto usando Streamlit y PyVis."""
+    if not HAS_STREAMLIT or st is None:
+        print("Streamlit no está disponible en este entorno.")
+        return
+
     st.set_page_config(
         page_title="Simulador de Laberintos | INFO1158",
         page_icon="🧭",
@@ -96,6 +137,10 @@ def main_streamlit() -> None:
 
     st.title("Simulador de Laberintos y Rutas Alternativas")
     st.write("Grafo dirigido del centro de almacenamiento (INFO1158).")
+
+    if grafo_a_datos_visualizacion is None or generar_html is None:
+        st.error("No se pudo cargar el módulo de visualización. Asegúrate de tener PyVis instalado.")
+        return
 
     json_path = ruta_configuracion()
     try:
@@ -132,16 +177,33 @@ def main_streamlit() -> None:
         "Gris continuo: arco activo · Rojo discontinuo: arco bloqueado"
     )
 
-    # La consulta BFS es de solo lectura en esta pantalla.
-    # El bloqueo/restauración original permanece dentro de main(), por consola.
-    with st.expander("Resultado de BFS (backend actual)"):
+    # Expander 1: BFS
+    with st.expander("Resultado de Camino Mínimo (BFS)"):
         resultado = bfs_shortest_path(grafo)
         if resultado["exists"]:
             st.success("Existe un camino de entrada a salida.")
             st.write(f"**Longitud mínima:** {resultado['length']} arcos")
             st.write("**Camino:** " + " → ".join(map(str, resultado["path_nodes"])))
+            st.write(f"**Arcos:** `{resultado['path_edges']}`")
         else:
             st.info("No existe camino dirigido entre la entrada y la salida.")
+
+    # Expander 2: Caminos Disjuntos
+    with st.expander("Familia Máxima de Caminos Disjuntos en Arcos (Edmonds-Karp)"):
+        res_disj = max_edge_disjoint_paths(grafo)
+        st.write(f"**Máximo número de caminos independientes en arcos:** {res_disj['max_paths']}")
+        for i, p in enumerate(res_disj["paths"], 1):
+            st.write(f"- **Ruta {i}** (longitud {p['length']}): " + " → ".join(p["path_nodes"]))
+
+    # Expander 3: Corte Mínimo
+    with st.expander("Corte Mínimo de Pasillos (Min-Cut)"):
+        res_cut = min_edge_cut(grafo)
+        st.write(f"**Cantidad mínima de pasillos a bloquear (|C|):** {res_cut['cut_size']}")
+        st.write(f"**Pasillos del corte C:** `{res_cut['min_cut_edges']}`")
+        st.write(f"**Vértices alcanzables R:** `{res_cut['reachable_nodes']}`")
+        st.write(f"**Vértices no alcanzables V \\ R:** `{res_cut['non_reachable_nodes']}`")
+        if res_cut["cut_size"] == res_disj["max_paths"]:
+            st.success("✓ Se comprueba que |C| coincide exactamente con la cantidad máxima de caminos disjuntos.")
 
     with st.expander("Lista de pasillos y estados"):
         filas = [
@@ -153,11 +215,6 @@ def main_streamlit() -> None:
             for arco in datos["arcos"]
         ]
         st.table(filas)
-
-    st.info(
-        "Issue #6: visualización inicial. Los controles para modificar el "
-        "grafo se incorporarán en el siguiente issue."
-    )
 
 
 if __name__ == "__main__":
