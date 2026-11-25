@@ -121,8 +121,33 @@ def main() -> None:
     print("=" * 65)
 
 
+def firma_grafo(grafo: DirectedGraph) -> tuple:
+    """Identifica inequívocamente el estado sobre el cual se calculan resultados."""
+    activos = {
+        (u, v)
+        for u, destinos in grafo.active_edges.items()
+        for v in destinos
+    }
+    return (
+        tuple(sorted(grafo.vertices)),
+        tuple(sorted(activos)),
+        tuple(sorted(grafo.blocked_edges)),
+        grafo.source,
+        grafo.sink,
+    )
+
+
+def calcular_resultados(grafo: DirectedGraph) -> dict[str, dict]:
+    """Calcula las tres soluciones sobre un mismo estado del grafo."""
+    return {
+        "bfs": bfs_shortest_path(grafo),
+        "disjuntos": max_edge_disjoint_paths(grafo),
+        "corte": min_edge_cut(grafo),
+    }
+
+
 def main_streamlit() -> None:
-    """Panel interactivo de Issue #7, conservando visualización y resultados."""
+    """Mantiene el panel Issue #7 e integra vistas y recálculo del Issue #8."""
     if not HAS_STREAMLIT or st is None:
         print("Streamlit no está disponible en este entorno.")
         return
@@ -132,7 +157,6 @@ def main_streamlit() -> None:
         page_icon="🧭",
         layout="wide",
     )
-
     st.title("Simulador de Laberintos y Rutas Alternativas")
     st.write("Grafo dirigido del centro de almacenamiento (INFO1158).")
 
@@ -140,20 +164,20 @@ def main_streamlit() -> None:
         st.error("No se pudo cargar el módulo de visualización. Comprueba que PyVis esté instalado.")
         st.stop()
 
-    # Evita importar Streamlit y el panel lateral en el modo consola.
+    # Se preserva el sidebar corregido del Issue #7 sin ninguna modificación.
     from src.ui.sidebar import renderizar_panel_lateral
+    from src.ui.visualizer import (
+        VISTA_RED, VISTA_BFS, VISTA_DISJUNTOS, VISTA_CORTE,
+        COLOR_BFS, COLOR_CORTE, COLORES_CAMINOS,
+    )
 
-    # En cada rerun, el panel obtiene el grafo que persiste en session_state,
-    # o carga uno nuevo únicamente si cambia el archivo seleccionado.
     grafo, archivo_actual = renderizar_panel_lateral(
         Path(__file__).resolve().parent / "data"
     )
     datos = grafo_a_datos_visualizacion(grafo)
-
-    # Calcular después de las modificaciones del panel (sin mutar el grafo).
-    resultado = bfs_shortest_path(grafo)
-    res_disj = max_edge_disjoint_paths(grafo)
-    res_cut = min_edge_cut(grafo)
+    firma_actual = firma_grafo(grafo)
+    # La revisión cambia al modificar el grafo, incluso si se vuelve al mismo estado.
+    revision_actual = st.session_state.get("issue7_revision", 0)
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Vértices", len(datos["vertices"]))
@@ -164,56 +188,138 @@ def main_streamlit() -> None:
     st.write(f"**Configuración:** `{archivo_actual}`")
     st.write(f"**Entrada:** `{datos['s']}`  ·  **Salida:** `{datos['t']}`")
 
-    # Solo la configuración G0 exige los límites numéricos iniciales.
+    # No se calculan algoritmos en cada rerun. Solo mediante el botón.
+    st.subheader("Resultados algorítmicos")
+    if st.button("Recalcular resultados", type="primary", key="issue8_recalcular"):
+        try:
+            nuevos_resultados = calcular_resultados(grafo)
+        except (ValueError, RuntimeError) as exc:
+            st.session_state.pop("issue8_resultados", None)
+            st.error(f"No fue posible recalcular las soluciones: {exc}")
+        else:
+            st.session_state["issue8_resultados"] = nuevos_resultados
+            st.session_state["issue8_firma"] = firma_actual
+            st.session_state["issue8_revision"] = revision_actual
+            st.success("Resultados actualizados para el estado actual de la red.")
+
+    vigente = (
+        st.session_state.get("issue8_firma") == firma_actual
+        and st.session_state.get("issue8_revision") == revision_actual
+        and "issue8_resultados" in st.session_state
+    )
+    resultados = st.session_state["issue8_resultados"] if vigente else None
+
+    if resultados is None:
+        st.info(
+            "Todavía no hay resultados calculados para esta versión de la red. "
+            "Pulsa «Recalcular resultados» para obtener las métricas y los resaltados."
+        )
+        if "issue8_resultados" in st.session_state:
+            st.warning("La red cambió. Los resultados anteriores están desactualizados y no se muestran.")
+
+    metr1, metr2, metr3 = st.columns(3)
+    if resultados is None:
+        metr1.metric("dG(s,t) · arcos", "—")
+        metr2.metric("Caminos disjuntos", "—")
+        metr3.metric("|C| · corte mínimo", "—")
+    else:
+        bfs = resultados["bfs"]
+        disjuntos = resultados["disjuntos"]
+        corte = resultados["corte"]
+        metr1.metric("dG(s,t) · arcos", str(bfs["length"]) if bfs["exists"] else "Sin ruta")
+        metr2.metric("Caminos disjuntos", disjuntos["max_paths"])
+        metr3.metric("|C| · corte mínimo", corte["cut_size"])
+        if not bfs["exists"]:
+            st.warning("Desconexión: no existe un camino dirigido entre la entrada y la salida.")
+            st.caption("No hay caminos disponibles; el corte mínimo es el conjunto vacío (|C| = 0).")
+        if disjuntos["max_paths"] != corte["cut_size"]:
+            st.error("Los resultados de flujo máximo y corte mínimo no coinciden. Revisar los algoritmos.")
+
+    # La comprobación de la pauta sobre G0 no debe usar resultados anteriores.
     if archivo_actual == "config_inicial.json":
         valido, errores = grafo.validate_initial_constraints()
-        tiene_dos_caminos = res_disj["max_paths"] >= 2
-        if valido and tiene_dos_caminos:
-            st.success("G0 cumple las restricciones iniciales estructurales y tiene al menos dos rutas independientes.")
-        else:
-            st.warning("La red actual no cumple todas las condiciones originales de G0. Las modificaciones interactivas siguen permitidas.")
+        if not valido:
+            st.warning(
+                "La red actual no cumple todas las restricciones estructurales iniciales de G0. "
+                "Las modificaciones interactivas siguen permitidas."
+            )
             for error in errores:
                 st.write(f"- {error}")
-            if not tiene_dos_caminos:
-                st.write("- Hay menos de dos caminos independientes en arcos de entrada a salida.")
+        elif resultados is not None and resultados["disjuntos"]["max_paths"] < 2:
+            st.warning("Hay menos de dos caminos independientes en arcos para los terminales elegidos.")
+        elif resultados is not None:
+            st.success("G0 cumple las restricciones iniciales y admite al menos dos rutas independientes.")
+        else:
+            st.caption("Restricciones estructurales de G0 correctas. La condición de rutas independientes se verificará al recalcular.")
     else:
-        st.info(
-            "Configuración alternativa, modificada o de prueba. "
-            "Los límites de la red inicial no se exigen a estas simulaciones."
-        )
+        st.caption("Configuración alternativa o de prueba: no se exigen aquí los límites iniciales de G0.")
 
     st.subheader("Visualización del grafo dirigido")
-    st.iframe(
-        generar_html(datos),
-        height=580,
-        alt="Grafo dirigido: entrada, salida y arcos activos o bloqueados",
+    vista = st.radio(
+        "Seleccionar vista",
+        [VISTA_RED, VISTA_BFS, VISTA_DISJUNTOS, VISTA_CORTE],
+        horizontal=True,
+        key="issue8_vista",
     )
+
+    if vista != VISTA_RED and resultados is None:
+        st.caption("Se muestra la red sin resaltados hasta que recalcules los resultados.")
+    st.iframe(
+        generar_html(datos, vista=vista, resultados=resultados),
+        height=580,
+        alt=f"Grafo dirigido en la vista {vista}",
+    )
+
+    # Leyenda textual compatible con el modo seleccionado.
     st.caption(
         "Verde: entrada · Rojo: salida · Azul: intersección · "
-        "Gris continuo: arco activo · Rojo discontinuo: arco bloqueado"
+        "Gris: arco activo normal · Rojo discontinuo: arco bloqueado"
     )
+    if resultados is not None:
+        if vista == VISTA_BFS:
+            st.caption(f"🟠 Camino mínimo resaltado en naranja ({COLOR_BFS}).")
+        elif vista == VISTA_CORTE:
+            st.caption(f"🟣 Arcos del corte mínimo resaltados en violeta ({COLOR_CORTE}).")
+        elif vista == VISTA_DISJUNTOS:
+            rutas = resultados["disjuntos"]["paths"]
+            if rutas:
+                for i, ruta in enumerate(rutas):
+                    st.markdown(
+                        f"**Ruta {i + 1}** · Color `{COLORES_CAMINOS[i % len(COLORES_CAMINOS)]}`: "
+                        + " → ".join(ruta["path_nodes"])
+                    )
+            else:
+                st.caption("No hay rutas disjuntas que resaltar.")
 
-    with st.expander("Resultado de Camino Mínimo (BFS)"):
-        if resultado["exists"]:
-            st.success("Existe un camino de entrada a salida.")
-            st.write(f"**Longitud mínima:** {resultado['length']} arcos")
-            st.write("**Camino:** " + " → ".join(map(str, resultado["path_nodes"])))
-            st.write(f"**Arcos:** `{resultado['path_edges']}`")
-        else:
-            st.info("No existe camino dirigido entre la entrada y la salida.")
+    # Se preservan las secciones de detalle de Issue #7, pero nunca se muestran
+    # con datos desactualizados.
+    if resultados is not None:
+        with st.expander("Resultado de Camino Mínimo (BFS)"):
+            bfs = resultados["bfs"]
+            if bfs["exists"]:
+                st.success("Existe un camino de entrada a salida.")
+                st.write(f"**Longitud mínima:** {bfs['length']} arcos")
+                st.write("**Camino:** " + " → ".join(map(str, bfs["path_nodes"])))
+                st.write(f"**Arcos:** `{bfs['path_edges']}`")
+            else:
+                st.info("No existe camino dirigido entre la entrada y la salida.")
 
-    with st.expander("Familia Máxima de Caminos Disjuntos en Arcos (Edmonds-Karp)"):
-        st.write(f"**Máximo número de caminos independientes en arcos:** {res_disj['max_paths']}")
-        for i, p in enumerate(res_disj["paths"], 1):
-            st.write(f"- **Ruta {i}** (longitud {p['length']}): " + " → ".join(p["path_nodes"]))
+        with st.expander("Familia Máxima de Caminos Disjuntos en Arcos (Edmonds-Karp)"):
+            disjuntos = resultados["disjuntos"]
+            st.write(f"**Máximo número de caminos:** {disjuntos['max_paths']}")
+            for i, ruta in enumerate(disjuntos["paths"], 1):
+                st.write(f"- **Ruta {i}** (longitud {ruta['length']}): " + " → ".join(ruta["path_nodes"]))
+            if not disjuntos["paths"]:
+                st.info("No hay caminos dirigidos disponibles.")
 
-    with st.expander("Corte Mínimo de Pasillos (Min-Cut)"):
-        st.write(f"**Cantidad mínima de pasillos a bloquear (|C|):** {res_cut['cut_size']}")
-        st.write(f"**Pasillos del corte C:** `{res_cut['min_cut_edges']}`")
-        st.write(f"**Vértices alcanzables R:** `{res_cut['reachable_nodes']}`")
-        st.write(f"**Vértices no alcanzables V \\ R:** `{res_cut['non_reachable_nodes']}`")
-        if res_cut["cut_size"] == res_disj["max_paths"]:
-            st.success("✓ Se comprueba que |C| coincide con la cantidad máxima de caminos disjuntos.")
+        with st.expander("Corte Mínimo de Pasillos (Min-Cut)"):
+            corte = resultados["corte"]
+            st.write(f"**Cardinalidad del corte mínimo |C|:** {corte['cut_size']}")
+            st.write(f"**Pasillos del corte C:** `{corte['min_cut_edges']}`")
+            st.write(f"**Vértices alcanzables R:** `{corte['reachable_nodes']}`")
+            st.write(f"**Vértices no alcanzables V \\ R:** `{corte['non_reachable_nodes']}`")
+            if corte["cut_size"] == resultados["disjuntos"]["max_paths"]:
+                st.success("✓ |C| coincide con el número máximo de caminos disjuntos.")
 
     with st.expander("Lista de pasillos y estados"):
         filas = [
