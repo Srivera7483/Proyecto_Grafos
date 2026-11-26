@@ -2,22 +2,25 @@
 **Proyecto:** Simulador Interactivo de Laberintos y Rutas Alternativas  
 **Asignatura:** Teoría de Grafos (INFO1158)  
 **Alineación:** Estructurado rigurosamente en base al **Informe Técnico del Proyecto** (`docs/Borrador Informe Markdown.md`)  
-**Equipo:** 3 Integrantes (Estudiante 1, Estudiante 2, Estudiante 3)  
+**Equipo:** 
+- **Integrante 1:** Diego Hernández
+- **Integrante 2:** Antonio Lara
+- **Integrante 3:** Sebastián Rivera  
 **Duración Total Estimada:** 19:30 a 20:00 minutos  
 
 ---
 
 ## Tabla de Tiempos y Correspondencia con el Informe
 
-| Segmento | Tiempo Estimado | Sección del Informe Técnico | Responsable Sugerido |
+| Segmento | Tiempo Estimado | Sección del Informe Técnico | Responsable |
 | :--- | :--- | :--- | :--- |
-| **Intro** | `00:00 - 00:45` (45 seg) | Introducción y Planteamiento del Centro de Almacenamiento | Integrante 1 |
-| **Bloque 1** | `00:45 - 04:00` (3 min 15 seg) | **Sección 1:** Modelación matemática del laberinto ($G_0$, $V$, $E$ y restricciones) | Integrante 1 |
-| **Bloque 2** | `04:00 - 08:30` (4 min 30 seg) | **Sección 2:** Algoritmos de análisis (BFS vs DFS, Greedy vs Edmonds-Karp, Menger y Min-Cut) | Integrante 2 |
-| **Bloque 3** | `08:30 - 13:00` (4 min 30 seg) | **Implementación y Software:** Demostración interactiva en vivo sobre la Red Base $G_0$ | Integrante 3 |
-| **Bloque 4** | `13:00 - 16:30` (3 min 30 seg) | **Simulación de Modificaciones:** Modificación 1 ($7 \to t$) y Modificación 2 ($s \to 6$, $11 \to t$) | Integrante 1 y 2 |
-| **Bloque 5** | `16:30 - 18:45` (2 min 15 seg) | **Verificación de Resultados:** Caso de control manual independiente vs código | Integrante 3 |
-| **Cierre** | `18:45 - 20:00` (1 min 15 seg) | Conclusiones finales y cierre formal | Todo el equipo |
+| **Intro** | `00:00 - 00:45` (45 seg) | Introducción y Planteamiento del Centro de Almacenamiento | **Diego Hernández** |
+| **Bloque 1** | `00:45 - 04:00` (3 min 15 seg) | **Sección 1:** Modelación matemática del laberinto ($G_0$, $V$, $E$ y restricciones) | **Diego Hernández** |
+| **Bloque 2** | `04:00 - 08:30` (4 min 30 seg) | **Sección 2:** Algoritmos de análisis (BFS vs DFS, Greedy vs Edmonds-Karp, Menger y Min-Cut) | **Antonio Lara** |
+| **Bloque 3** | `08:30 - 13:00` (4 min 30 seg) | **Implementación y Software:** Demostración interactiva en vivo sobre la Red Base $G_0$ | **Sebastián Rivera** |
+| **Bloque 4** | `13:00 - 16:30` (3 min 30 seg) | **Simulación de Modificaciones:** Modificación 1 ($7 \to t$) y Modificación 2 ($s \to 6$, $11 \to t$) | **Diego Hernández y Antonio Lara** |
+| **Bloque 5** | `16:30 - 18:45` (2 min 15 seg) | **Verificación de Resultados:** Caso de control manual independiente vs código | **Sebastián Rivera** |
+| **Cierre** | `18:45 - 20:00` (1 min 15 seg) | Conclusiones finales y cierre formal | **Diego, Antonio y Sebastián** |
 
 ---
 
@@ -26,12 +29,12 @@
 ### [00:00 - 00:45] Intro Audiovisual: El Problema de la Circulación Unidireccional
 - **Recurso en pantalla:** 
   - *00:00 - 00:15:* Logo de la universidad / asignatura. Video de apoyo o animación de robots de inspección circulando por un centro de distribución. Título: *"Simulador interactivo de laberintos y rutas alternativas - INFO1158"*.
-  - *00:15 - 00:35:* Tomas de los 3 expositores en cámara.
+  - *00:15 - 00:35:* Tomas de los 3 expositores en cámara con sus nombres en un cintillo inferior (Diego Hernández, Antonio Lara y Sebastián Rivera).
   - *00:35 - 00:45:* Transición a la portada formal del informe técnico.
-- **Locución (Integrante 1):**
+- **Locución (Diego Hernández):**
   > "Muy buenos días, profesor y compañeros. En los centros de almacenamiento logístico modernos, la inspección automatizada depende de robots que se desplazan por pasillos de sentido único, conectados mediante intersecciones y áreas de carga.  
   > En este esquema, cada misión exige trasladarse desde una entrada establecida hasta una salida obligatoria. Sin embargo, si un pasillo colapsa o se bloquea temporalmente, múltiples rutas pueden quedar inutilizadas al mismo tiempo.  
-  > En base al informe técnico desarrollado para la asignatura Teoría de Grafos, presentaremos la modelación matemática, los fundamentos algorítmicos y la simulación interactiva de nuestro sistema. Somos el equipo integrado por [Nombre 1], [Nombre 2] y [Nombre 3], y este es el análisis formal de nuestro proyecto."
+  > En base al informe técnico desarrollado para la asignatura Teoría de Grafos, presentaremos la modelación matemática, los fundamentos algorítmicos y la simulación interactiva de nuestro sistema. Somos el equipo integrado por Diego Hernández, Antonio Lara y Sebastián Rivera, y este es el análisis formal de nuestro proyecto."
 
 ---
 
@@ -40,7 +43,7 @@
   - Diapositiva con la formulación de la Sección 1.1 del informe: grafo $G_0 = (V, E)$, definición explícita de $V$ (12 vértices) y de $E$ (16 arcos).
   - Resaltado de las restricciones de la Sección 1.2: ausencia de lazos, no multiplicidad, unidireccionalidad estricta y fórmula de conectividad $\delta^-(v) + \delta^+(v) \ge 1$.
   - Esquema visual del vértice $7$ como nodo de cruce central.
-- **Locución (Integrante 1):**
+- **Locución (Diego Hernández):**
   > "Tal como establecemos en la Sección 1 de nuestro informe técnico, modelamos el centro de almacenamiento mediante un grafo dirigido simple denominado $G_0 = (V, E)$.  
   > 
   > En primer lugar, definimos el **conjunto de vértices** $V$, que representa las posiciones físicas o intersecciones del laberinto. Nuestro modelo cuenta con exactamente $|V| = 12$ vértices, satisfaciendo la cota $10 \le |V| \le 12$:  
@@ -68,7 +71,7 @@
   - Diagrama de exploración por capas de BFS vs avances/regresiones de DFS.
   - Sección 2.2: Esquema del fallo del algoritmo voraz (*Greedy*) y los 4 pasos del algoritmo de Edmonds-Karp.
   - Sección 2.3: Ecuación del Teorema de Menger y extracción del corte mínimo $C$ mediante el subconjunto residual $S$.
-- **Locución (Integrante 2):**
+- **Locución (Antonio Lara):**
   > "En la Sección 2 de nuestro informe analizamos teóricamente las estrategias algorítmicas, justificando la selección de los métodos idóneos.  
   > 
   > *(Sub-bloque 2.1: Camino con menor número de arcos - BFS vs DFS)*  
@@ -105,7 +108,7 @@
   - Navegador web con la aplicación en Streamlit (`python -m streamlit run app.py`).
   - Grafo interactivo en PyVis: mostrando los 12 nodos, 16 arcos activos, terminales en verde ($s$) y rojo ($t$).
   - Despliegue de los expansores con los resultados calculados.
-- **Locución (Integrante 3):**
+- **Locución (Sebastián Rivera):**
   > "Pasamos ahora a contrastar la teoría del informe con el funcionamiento en tiempo real de nuestra aplicación.  
   > 
   > *(Terminal en pantalla)*  
@@ -143,8 +146,8 @@
   - Recálculo en vivo de BFS, caminos disjuntos y corte mínimo.
   - Interfaz web cargando `mod_2.json` (adición de pasillos $s \to 6$ y $11 \to t$).
   - Cuadro comparativo entre las tres configuraciones ($G_0$, Mod 1, Mod 2).
-- **Locución (Integrante 1 y Integrante 2):**
-  > *(Integrante 1 - Modificación 1)*  
+- **Locución (Diego Hernández y Antonio Lara):**
+  > *(Diego Hernández - Modificación 1)*  
   > "Siguiendo los requerimientos del proyecto, comparamos la red base contra dos modificaciones conservando los mismos terminales $s$ y $t$.  
   > 
   > En la **Modificación 1** (`mod_1.json`), simulamos la inhabilitación del pasillo directo a la salida $(7, t)$, representado con línea roja discontinua en el visualizador.  
@@ -154,7 +157,7 @@
   > - El corte mínimo se reduce a $|C| = 1$, conformado únicamente por el pasillo $\{(8, t)\}$.  
   > Esto demuestra que el bloqueo de un pasillo clave crea un cuello de botella absoluto en el nodo 8, volviendo la red sumamente vulnerable ante cualquier falla adicional."  
   > 
-  > *(Integrante 2 - Modificación 2)*  
+  > *(Antonio Lara - Modificación 2)*  
   > "En la **Modificación 2** (`mod_2.json`), evaluamos una expansión de capacidad: agregamos un nuevo pasillo desde la entrada $(s, 6)$ y una salida directa desde el cuadrante inferior $(11, t)$, alcanzando 18 arcos en total.  
   > Al recalcular:  
   > - La red ahora admite **3 caminos disjuntos en arcos simultáneos**:  
@@ -171,7 +174,7 @@
   - Diapositiva con el grafo de control reducido de 5 vértices: $V = \{s, A, B, C, t\}$ y 6 arcos.
   - Tabla de resolución manual analítica (inspección de caminos, arcos disjuntos y corte mínimo).
   - Terminal ejecutando el algoritmo sobre el caso manual y verificando que la salida coincide 100%.
-- **Locución (Integrante 3):**
+- **Locución (Sebastián Rivera):**
   > "Para cumplir con la verificación matemática exigida por la pauta, construimos un caso de control independiente de 5 vértices que puede resolverse rigurosamente a mano:  
   > $$V = \{s, A, B, C, t\}, \quad E = \{(s, A), (s, B), (A, C), (B, C), (B, t), (C, t)\}$$  
   > 
@@ -200,19 +203,19 @@
 ### [18:45 - 20:00] Cierre y Conclusiones
 - **Recurso en pantalla:** 
   - Diapositiva final con conclusiones sintetizadas y bibliografía citada en el informe (Cormen et al., Kleinberg & Tardos, Diestel, Ford & Fulkerson).
-  - Cámara de los 3 integrantes.
-- **Locución (Integrantes 1, 2 y 3):**
-  > *(Integrante 1)*  
+  - Cámara de los 3 integrantes (Diego Hernández, Antonio Lara y Sebastián Rivera).
+- **Locución (Diego Hernández, Antonio Lara y Sebastián Rivera):**
+  > *(Diego Hernández)*  
   > "A través de este proyecto hemos comprobado cómo la modelación formal mediante grafos dirigidos permite transformar un problema de logística física en un modelo computacional robusto y predecible."  
   > 
-  > *(Integrante 2)*  
+  > *(Antonio Lara)*  
   > "La selección e implementación desde cero de algoritmos como BFS y Edmonds-Karp demostró que la optimalidad y la capacidad de reversión mediante redes residuales son indispensables para evitar las trampas de los enfoques voraces."  
   > 
-  > *(Integrante 3)*  
+  > *(Sebastián Rivera)*  
   > "El simulador desarrollado no solo responde a las interrogantes operativas de ruta mínima y redundancia, sino que proporciona una plataforma interactiva visual para evaluar la resiliencia de la red ante contingencias o expansiones.  
   > Muchas gracias por su atención, y quedamos a disposición del docente para sus preguntas."  
   > 
-  > *(Placa final de créditos y cierre del video)*
+  > *(Placa final con créditos: Diego Hernández, Antonio Lara, Sebastián Rivera - Noviembre 2026)*
 
 ---
 
