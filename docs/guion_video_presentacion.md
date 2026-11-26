@@ -2,10 +2,14 @@
 **Proyecto:** Simulador Interactivo de Laberintos y Rutas Alternativas  
 **Asignatura:** Teoría de Grafos (INFO1158)  
 **Alineación:** Estructurado rigurosamente en base al **Informe Técnico del Proyecto** (`docs/Borrador Informe Markdown.md`)  
+<<<<<<< HEAD
 **Equipo:** 
 - **Integrante 1:** Diego Hernández
 - **Integrante 2:** Antonio Lara
 - **Integrante 3:** Sebastián Rivera  
+=======
+**Equipo:** Diego Hernández, Antonio Lara, Sebastian Rivera 
+>>>>>>> 73c05eb7073311dcf085e3bc3ca09754c81bc24b
 **Duración Total Estimada:** 19:30 a 20:00 minutos  
 
 ---
@@ -14,6 +18,7 @@
 
 | Segmento | Tiempo Estimado | Sección del Informe Técnico | Responsable |
 | :--- | :--- | :--- | :--- |
+<<<<<<< HEAD
 | **Intro** | `00:00 - 00:45` (45 seg) | Introducción y Planteamiento del Centro de Almacenamiento | **Diego Hernández** |
 | **Bloque 1** | `00:45 - 04:00` (3 min 15 seg) | **Sección 1:** Modelación matemática del laberinto ($G_0$, $V$, $E$ y restricciones) | **Diego Hernández** |
 | **Bloque 2** | `04:00 - 08:30` (4 min 30 seg) | **Sección 2:** Algoritmos de análisis (BFS vs DFS, Greedy vs Edmonds-Karp, Menger y Min-Cut) | **Antonio Lara** |
@@ -21,6 +26,15 @@
 | **Bloque 4** | `13:00 - 16:30` (3 min 30 seg) | **Simulación de Modificaciones:** Modificación 1 ($7 \to t$) y Modificación 2 ($s \to 6$, $11 \to t$) | **Diego Hernández y Antonio Lara** |
 | **Bloque 5** | `16:30 - 18:45` (2 min 15 seg) | **Verificación de Resultados:** Caso de control manual independiente vs código | **Sebastián Rivera** |
 | **Cierre** | `18:45 - 20:00` (1 min 15 seg) | Conclusiones finales y cierre formal | **Diego, Antonio y Sebastián** |
+=======
+| **Intro** | `00:00 - 00:45` (45 seg) | Introducción y Planteamiento del Centro de Almacenamiento | Diego Hernández |
+| **Bloque 1** | `00:45 - 04:00` (3 min 15 seg) | **Sección 1:** Modelación matemática del laberinto ($G_0$, $V$, $E$ y restricciones) | Diego Hernández |
+| **Bloque 2** | `04:00 - 08:30` (4 min 30 seg) | **Sección 2:** Algoritmos de análisis (BFS vs DFS, Greedy vs Edmonds-Karp, Menger y Min-Cut) | Antonio Lara |
+| **Bloque 3** | `08:30 - 13:00` (4 min 30 seg) | **Implementación y Software:** Demostración interactiva en vivo sobre la Red Base $G_0$ | Sebastian Rivera |
+| **Bloque 4** | `13:00 - 16:30` (3 min 30 seg) | **Simulación de Modificaciones:** Modificación 1 ($7 \to t$) y Modificación 2 ($s \to 6$, $11 \to t$) | Diego Hernández y Antonio Lara |
+| **Bloque 5** | `16:30 - 18:45` (2 min 15 seg) | **Verificación de Resultados:** Caso de control manual independiente vs código | Sebastian Rivera |
+| **Cierre** | `18:45 - 20:00` (1 min 15 seg) | Conclusiones finales y cierre formal | Todo el equipo |
+>>>>>>> 73c05eb7073311dcf085e3bc3ca09754c81bc24b
 
 ---
 
