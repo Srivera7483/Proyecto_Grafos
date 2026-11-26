@@ -1,16 +1,30 @@
-"""Adaptación del modelo de grafos a una visualización dirigida con PyVis."""
+"""Adaptación de DirectedGraph a PyVis y resaltado de resultados (Issue #8).
+
+La representación base del Issue #6 se conserva. Un arco bloqueado no
+puede resaltarse como integrante de un camino o corte válido.
+"""
 
 from pyvis.network import Network
 
+VISTA_RED = "Red original"
+VISTA_BFS = "Camino mínimo"
+VISTA_DISJUNTOS = "Caminos disjuntos"
+VISTA_CORTE = "Corte mínimo"
+VISTAS = (VISTA_RED, VISTA_BFS, VISTA_DISJUNTOS, VISTA_CORTE)
+
+COLOR_ACTIVO = "#64748b"
+COLOR_BLOQUEADO = "#dc2626"
+COLOR_ATENUADO = "#aab3c2"
+COLOR_BFS = "#d97706"
+COLOR_CORTE = "#9333ea"
+COLORES_CAMINOS = (
+    "#0f766e", "#7c3aed", "#e11d48", "#2563eb", "#b45309", "#15803d",
+    "#be185d", "#0891b2", "#4f46e5", "#a16207", "#0e7490", "#9f1239",
+)
+
 
 def grafo_a_datos_visualizacion(grafo) -> dict:
-    """
-    Convierte DirectedGraph al contrato visual utilizado por PyVis.
-
-    Asume que grafo.active_edges es un diccionario de adyacencia,
-    cuyos valores se pueden recorrer para obtener los destinos, y que
-    grafo.blocked_edges es una colección de pares (origen, destino).
-    """
+    """Extrae vértices y arcos de DirectedGraph sin modificarlo."""
     activos = {
         (str(origen), str(destino))
         for origen, destinos in grafo.active_edges.items()
@@ -25,7 +39,11 @@ def grafo_a_datos_visualizacion(grafo) -> dict:
     return {
         "vertices": sorted((str(v) for v in grafo.vertices)),
         "arcos": [
-            {"origen": origen, "destino": destino, "activo": (origen, destino) not in bloqueados}
+            {
+                "origen": origen,
+                "destino": destino,
+                "activo": (origen, destino) in activos,
+            }
             for origen, destino in sorted(todos)
         ],
         "s": str(grafo.source),
@@ -33,8 +51,73 @@ def grafo_a_datos_visualizacion(grafo) -> dict:
     }
 
 
-def generar_html(datos: dict) -> str:
-    """Genera un HTML autocontenido con vértices, flechas y estados."""
+def estilos_arcos(datos: dict, vista: str = VISTA_RED, resultados: dict | None = None) -> dict:
+    """Define color, grosor, trazo y descripción por arco, sin llamar a PyVis.
+
+    resultados contiene las claves 'bfs', 'disjuntos', 'corte', tal como
+    las devuelve la capa de coordinación de app.py.
+    """
+    if vista not in VISTAS:
+        raise ValueError(f"Vista desconocida: {vista}")
+
+    destacados: dict[tuple[str, str], tuple[str, str]] = {}
+    if resultados is not None:
+        if vista == VISTA_BFS:
+            for u, v in resultados["bfs"]["path_edges"]:
+                destacados[(str(u), str(v))] = (COLOR_BFS, "Camino mínimo (BFS)")
+        elif vista == VISTA_DISJUNTOS:
+            for indice, camino in enumerate(resultados["disjuntos"]["paths"]):
+                color = COLORES_CAMINOS[indice % len(COLORES_CAMINOS)]
+                for u, v in camino["path_edges"]:
+                    destacados[(str(u), str(v))] = (color, f"Ruta disjunta {indice + 1}")
+        elif vista == VISTA_CORTE:
+            for u, v in resultados["corte"]["min_cut_edges"]:
+                destacados[(str(u), str(v))] = (COLOR_CORTE, "Arco del corte mínimo")
+
+    resaltando = bool(destacados)
+    estilos = {}
+    for arco in datos["arcos"]:
+        u, v = arco["origen"], arco["destino"]
+        clave = (u, v)
+        activo = arco["activo"]
+        estado = "Activo" if activo else "Bloqueado"
+        titulo = f"{u} → {v}: {estado}"
+
+        if not activo:
+            # Tiene prioridad el estado real: los bloqueados son siempre rojos discontinuos.
+            estilos[clave] = {
+                "color": COLOR_BLOQUEADO,
+                "width": 2,
+                "dashes": True,
+                "title": titulo,
+            }
+        elif clave in destacados:
+            color, descripcion = destacados[clave]
+            estilos[clave] = {
+                "color": color,
+                "width": 6,
+                "dashes": False,
+                "title": f"{titulo} | {descripcion}",
+            }
+        else:
+            estilos[clave] = {
+                "color": COLOR_ATENUADO if resaltando else COLOR_ACTIVO,
+                "width": 2 if resaltando else 3,
+                "dashes": False,
+                "title": titulo,
+            }
+    return estilos
+
+
+def generar_html(
+    datos: dict,
+    vista: str = VISTA_RED,
+    resultados: dict | None = None,
+) -> str:
+    """Genera HTML autocontenido con la vista de resultados solicitada.
+
+    La firma anterior generar_html(datos) permanece compatible.
+    """
     red = Network(
         height="550px",
         width="100%",
@@ -86,17 +169,9 @@ def generar_html(datos: dict) -> str:
             borderWidth=2,
         )
 
+    estilos = estilos_arcos(datos, vista=vista, resultados=resultados)
     for arco in datos["arcos"]:
-        activo = arco["activo"]
-        origen, destino = arco["origen"], arco["destino"]
-        red.add_edge(
-            origen,
-            destino,
-            arrows="to",
-            color="#64748b" if activo else "#dc2626",
-            width=3 if activo else 2,
-            dashes=not activo,
-            title=f"{origen} → {destino}: {'Activo' if activo else 'Bloqueado'}",
-        )
+        u, v = arco["origen"], arco["destino"]
+        red.add_edge(u, v, arrows="to", **estilos[(u, v)])
 
     return red.generate_html()

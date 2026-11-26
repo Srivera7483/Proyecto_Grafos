@@ -1,10 +1,16 @@
 {
-  "_comentario": "Grafo chico para probar algoritmos en el informe manualmente y como prueba rápida para el Seba",
-  "nombre": "Configuración Inicial (G0)",
+  "nombre": "Caso Manual de Verificación (5 vértices, 7 arcos)",
+  "descripcion": "Grafo chico para probar algoritmos en el informe manualmente y como prueba rápida para el Seba",
   "s": "s",
   "t": "t",
-  "vertices": ["s", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "t"],
+  "vertices": ["s", "A", "B", "C", "t"],
   "arcos": [
-    {"origen": "s", "destino": "2", "activo": true}
+    {"origen": "s", "destino": "A", "activo": true},
+    {"origen": "s", "destino": "B", "activo": true},
+    {"origen": "A", "destino": "B", "activo": true},
+    {"origen": "A", "destino": "C", "activo": true},
+    {"origen": "B", "destino": "C", "activo": true},
+    {"origen": "B", "destino": "t", "activo": true},
+    {"origen": "C", "destino": "t", "activo": true}
   ]
 }
