@@ -2,7 +2,7 @@
 **Proyecto:** Simulador Interactivo de Laberintos y Rutas Alternativas  
 **Asignatura:** Teoría de Grafos (INFO1158)  
 **Alineación:** Estructurado rigurosamente en base al **Informe Técnico del Proyecto** (`docs/Borrador Informe Markdown.md`)  
-**Equipo:** 3 Integrantes (Estudiante 1, Estudiante 2, Estudiante 3)  
+**Equipo:** Diego Hernández, Antonio Lara, Sebastian Rivera 
 **Duración Total Estimada:** 19:30 a 20:00 minutos  
 
 ---
@@ -11,12 +11,12 @@
 
 | Segmento | Tiempo Estimado | Sección del Informe Técnico | Responsable Sugerido |
 | :--- | :--- | :--- | :--- |
-| **Intro** | `00:00 - 00:45` (45 seg) | Introducción y Planteamiento del Centro de Almacenamiento | Integrante 1 |
-| **Bloque 1** | `00:45 - 04:00` (3 min 15 seg) | **Sección 1:** Modelación matemática del laberinto ($G_0$, $V$, $E$ y restricciones) | Integrante 1 |
-| **Bloque 2** | `04:00 - 08:30` (4 min 30 seg) | **Sección 2:** Algoritmos de análisis (BFS vs DFS, Greedy vs Edmonds-Karp, Menger y Min-Cut) | Integrante 2 |
-| **Bloque 3** | `08:30 - 13:00` (4 min 30 seg) | **Implementación y Software:** Demostración interactiva en vivo sobre la Red Base $G_0$ | Integrante 3 |
-| **Bloque 4** | `13:00 - 16:30` (3 min 30 seg) | **Simulación de Modificaciones:** Modificación 1 ($7 \to t$) y Modificación 2 ($s \to 6$, $11 \to t$) | Integrante 1 y 2 |
-| **Bloque 5** | `16:30 - 18:45` (2 min 15 seg) | **Verificación de Resultados:** Caso de control manual independiente vs código | Integrante 3 |
+| **Intro** | `00:00 - 00:45` (45 seg) | Introducción y Planteamiento del Centro de Almacenamiento | Diego Hernández |
+| **Bloque 1** | `00:45 - 04:00` (3 min 15 seg) | **Sección 1:** Modelación matemática del laberinto ($G_0$, $V$, $E$ y restricciones) | Diego Hernández |
+| **Bloque 2** | `04:00 - 08:30` (4 min 30 seg) | **Sección 2:** Algoritmos de análisis (BFS vs DFS, Greedy vs Edmonds-Karp, Menger y Min-Cut) | Antonio Lara |
+| **Bloque 3** | `08:30 - 13:00` (4 min 30 seg) | **Implementación y Software:** Demostración interactiva en vivo sobre la Red Base $G_0$ | Sebastian Rivera |
+| **Bloque 4** | `13:00 - 16:30` (3 min 30 seg) | **Simulación de Modificaciones:** Modificación 1 ($7 \to t$) y Modificación 2 ($s \to 6$, $11 \to t$) | Diego Hernández y Antonio Lara |
+| **Bloque 5** | `16:30 - 18:45` (2 min 15 seg) | **Verificación de Resultados:** Caso de control manual independiente vs código | Sebastian Rivera |
 | **Cierre** | `18:45 - 20:00` (1 min 15 seg) | Conclusiones finales y cierre formal | Todo el equipo |
 
 ---
@@ -28,7 +28,7 @@
   - *00:00 - 00:15:* Logo de la universidad / asignatura. Video de apoyo o animación de robots de inspección circulando por un centro de distribución. Título: *"Simulador interactivo de laberintos y rutas alternativas - INFO1158"*.
   - *00:15 - 00:35:* Tomas de los 3 expositores en cámara.
   - *00:35 - 00:45:* Transición a la portada formal del informe técnico.
-- **Locución (Integrante 1):**
+- **Locución (Diego Hernández):**
   > "Muy buenos días, profesor y compañeros. En los centros de almacenamiento logístico modernos, la inspección automatizada depende de robots que se desplazan por pasillos de sentido único, conectados mediante intersecciones y áreas de carga.  
   > En este esquema, cada misión exige trasladarse desde una entrada establecida hasta una salida obligatoria. Sin embargo, si un pasillo colapsa o se bloquea temporalmente, múltiples rutas pueden quedar inutilizadas al mismo tiempo.  
   > En base al informe técnico desarrollado para la asignatura Teoría de Grafos, presentaremos la modelación matemática, los fundamentos algorítmicos y la simulación interactiva de nuestro sistema. Somos el equipo integrado por [Nombre 1], [Nombre 2] y [Nombre 3], y este es el análisis formal de nuestro proyecto."
@@ -40,7 +40,7 @@
   - Diapositiva con la formulación de la Sección 1.1 del informe: grafo $G_0 = (V, E)$, definición explícita de $V$ (12 vértices) y de $E$ (16 arcos).
   - Resaltado de las restricciones de la Sección 1.2: ausencia de lazos, no multiplicidad, unidireccionalidad estricta y fórmula de conectividad $\delta^-(v) + \delta^+(v) \ge 1$.
   - Esquema visual del vértice $7$ como nodo de cruce central.
-- **Locución (Integrante 1):**
+- **Locución (Diego Hernández):**
   > "Tal como establecemos en la Sección 1 de nuestro informe técnico, modelamos el centro de almacenamiento mediante un grafo dirigido simple denominado $G_0 = (V, E)$.  
   > 
   > En primer lugar, definimos el **conjunto de vértices** $V$, que representa las posiciones físicas o intersecciones del laberinto. Nuestro modelo cuenta con exactamente $|V| = 12$ vértices, satisfaciendo la cota $10 \le |V| \le 12$:  
